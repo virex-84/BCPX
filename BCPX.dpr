@@ -5,7 +5,7 @@
   Позволяющий делать запрос к БД
   И сохранять результат в excel
 
-  eebcpx.exe -Q"тело запроса" -S"SERVER-NAME" -F"C:\temp\text.xslx" -H -I -U"User" -P"Password"
+  bcpx.exe -Q"тело запроса" -S"SERVER-NAME" -F"C:\temp\text.xslx" -H -I -U"User" -P"Password"
   -Q - запрос
   -U - имя пользователя
   -P - пароль

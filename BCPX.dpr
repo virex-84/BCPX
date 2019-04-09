@@ -1,18 +1,18 @@
 {
-  (с) https://github.com/virex-84
+  (СЃ) https://github.com/virex-84
   
-  Аналог утилиты bcp в MSSQL
-  Позволяющий делать запрос к БД
-  И сохранять результат в excel
+  РђРЅР°Р»РѕРі СѓС‚РёР»РёС‚С‹ bcp РІ MSSQL
+  РџРѕР·РІРѕР»СЏСЋС‰РёР№ РґРµР»Р°С‚СЊ Р·Р°РїСЂРѕСЃ Рє Р‘Р”
+  Р СЃРѕС…СЂР°РЅСЏС‚СЊ СЂРµР·СѓР»СЊС‚Р°С‚ РІ excel
 
-  eebcpx.exe -Q"тело запроса" -S"SERVER-NAME" -F"C:\temp\text.xslx" -H -I -U"User" -P"Password"
-  -Q - запрос
-  -U - имя пользователя
-  -P - пароль
-  -F - имя файла
-  -H - включать в файл заголовоки запроса/таблицы
-  -S - имя сервера
-  -I - интерактивный режим: каждую секунду отображает время и прогресс
+  eebcpx.exe -Q"С‚РµР»Рѕ Р·Р°РїСЂРѕСЃР°" -S"SERVER-NAME" -F"C:\temp\text.xslx" -H -I -U"User" -P"Password"
+  -Q - Р·Р°РїСЂРѕСЃ
+  -U - РёРјСЏ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ
+  -P - РїР°СЂРѕР»СЊ
+  -F - РёРјСЏ С„Р°Р№Р»Р°
+  -H - РІРєР»СЋС‡Р°С‚СЊ РІ С„Р°Р№Р» Р·Р°РіРѕР»РѕРІРѕРєРё Р·Р°РїСЂРѕСЃР°/С‚Р°Р±Р»РёС†С‹
+  -S - РёРјСЏ СЃРµСЂРІРµСЂР°
+  -I - РёРЅС‚РµСЂР°РєС‚РёРІРЅС‹Р№ СЂРµР¶РёРј: РєР°Р¶РґСѓСЋ СЃРµРєСѓРЅРґСѓ РѕС‚РѕР±СЂР°Р¶Р°РµС‚ РІСЂРµРјСЏ Рё РїСЂРѕРіСЂРµСЃСЃ
 }
 program BCPX;
 
@@ -27,7 +27,7 @@ uses
   Windows,
   ComObj;
 
-//ключи программы
+//РєР»СЋС‡Рё РїСЂРѕРіСЂР°РјРјС‹
 const
   pQuery = '-Q';
   pUser = '-U';
@@ -37,7 +37,7 @@ const
   pServer = '-S';
   pInteractive = '-I';
 
-//импорт из Excel8TLB.pas
+//РёРјРїРѕСЂС‚ РёР· Excel8TLB.pas
 const
   xlInsideHorizontal = $0000000C;
   xlInsideVertical = $0000000B;
@@ -48,7 +48,7 @@ const
 
   xlThin = $00000002;
 
-//для определения типа колонки
+//РґР»СЏ РѕРїСЂРµРґРµР»РµРЅРёСЏ С‚РёРїР° РєРѕР»РѕРЅРєРё
 const
   varDecimal = $000E;
 
@@ -79,35 +79,35 @@ var
   value: OleVariant;
   varExtended: Extended;
 
-//таймер для интерактивного режима
+//С‚Р°Р№РјРµСЂ РґР»СЏ РёРЅС‚РµСЂР°РєС‚РёРІРЅРѕРіРѕ СЂРµР¶РёРјР°
 function timeSetEvent(uDelay, uResolution: Longint; lpFunction: pointer; dwUser, uFlags: Longint): Longint; stdcall; external 'winmm.dll';
 function timeKillEvent(uID: UINT): Integer; stdcall; external 'winmm';
 
-//вытаскиваем текстовый параметр
+//РІС‹С‚Р°СЃРєРёРІР°РµРј С‚РµРєСЃС‚РѕРІС‹Р№ РїР°СЂР°РјРµС‚СЂ
 procedure extractParam(var param: string; text: string; name: string); overload;
 begin
   if copy(text, 1, length(name)) = name then
     param := copy(text, 1 + length(name), length(text));
 end;
 
-//вытаскиваем булевый параметр
+//РІС‹С‚Р°СЃРєРёРІР°РµРј Р±СѓР»РµРІС‹Р№ РїР°СЂР°РјРµС‚СЂ
 procedure extractParam(var param: boolean; text: string; name: string); overload;
 begin
   if copy(text, 1, length(name)) = name then
     param := true;
 end;
 
-//используется ли файл другой программой
+//РёСЃРїРѕР»СЊР·СѓРµС‚СЃСЏ Р»Рё С„Р°Р№Р» РґСЂСѓРіРѕР№ РїСЂРѕРіСЂР°РјРјРѕР№
 function IsOpen(const aFileName: string): Boolean;
 var
   Hf: Integer;
 begin
-  //Существует ли файл.
+  //РЎСѓС‰РµСЃС‚РІСѓРµС‚ Р»Рё С„Р°Р№Р».
   Result := FileExists(aFileName);
-  //Если файл не существует, значит он не открыт. Выходим.
+  //Р•СЃР»Рё С„Р°Р№Р» РЅРµ СЃСѓС‰РµСЃС‚РІСѓРµС‚, Р·РЅР°С‡РёС‚ РѕРЅ РЅРµ РѕС‚РєСЂС‹С‚. Р’С‹С…РѕРґРёРј.
   if not Result then Exit;
-  //Проверяем, открыт ли уже файл. Для этого пытаемся открыть файл
-  //в режиме неразделяемого доступа.
+  //РџСЂРѕРІРµСЂСЏРµРј, РѕС‚РєСЂС‹С‚ Р»Рё СѓР¶Рµ С„Р°Р№Р». Р”Р»СЏ СЌС‚РѕРіРѕ РїС‹С‚Р°РµРјСЃСЏ РѕС‚РєСЂС‹С‚СЊ С„Р°Р№Р»
+  //РІ СЂРµР¶РёРјРµ РЅРµСЂР°Р·РґРµР»СЏРµРјРѕРіРѕ РґРѕСЃС‚СѓРїР°.
   Hf := FileOpen(aFileName, fmOpenReadWrite or fmShareExclusive);
   Result := Hf = -1;
   if not Result then FileClose(Hf);
@@ -127,7 +127,7 @@ begin
     OemToAnsiBuff(PChar(AnsiStr), PChar(Result), Length(Result));
 end;
 
-//вывод лога в одной строке
+//РІС‹РІРѕРґ Р»РѕРіР° РІ РѕРґРЅРѕР№ СЃС‚СЂРѕРєРµ
 procedure log(text: string; refreshNow: boolean = false);
 var
   hStdOut: HWND;
@@ -148,28 +148,28 @@ begin
   Coord.X := 0;
   Coord.Y := 0;
 
-  //очищаем консоль
+  //РѕС‡РёС‰Р°РµРј РєРѕРЅСЃРѕР»СЊ
   FillConsoleOutputCharacter(hStdOut, ' ', ScreenBufInfo.dwSize.X * ScreenBufInfo.dwSize.Y, Coord, NumWritten);
 
-  //установка позиции
+  //СѓСЃС‚Р°РЅРѕРІРєР° РїРѕР·РёС†РёРё
   SetConsoleCursorPosition(hStdOut, Coord);
 
   time := FormatDateTime('hh:mm:ss', now() - startTime);
 
-  //пишем текст
+  //РїРёС€РµРј С‚РµРєСЃС‚
   Writeln(Format('Server: %s', [servername]));
   Writeln(Format('Query : %s', [StrToOem(query)]));
   Writeln(Format('Time  : %s', [time]));
   Writeln(Format('%s', [consoleLog]));
 end;
 
-//тик таймера
+//С‚РёРє С‚Р°Р№РјРµСЂР°
 procedure OnTime(uTimerID, uMsg, dwUser, dw1, dw2: LongInt); stdcall;
 begin
   log(consoleLog, true);
 end;
 
-//проверяем установлен ли на компьютере Excel
+//РїСЂРѕРІРµСЂСЏРµРј СѓСЃС‚Р°РЅРѕРІР»РµРЅ Р»Рё РЅР° РєРѕРјРїСЊСЋС‚РµСЂРµ Excel
 function isExcelInstalled: boolean;
 var
   ClassID: TCLSID;
@@ -183,14 +183,14 @@ begin
 end;
 
 begin
-  //устанавливаем кодировку
+  //СѓСЃС‚Р°РЅР°РІР»РёРІР°РµРј РєРѕРґРёСЂРѕРІРєСѓ
   //SetConsoleCP(1251);
   //SetConsoleOutputCP(1251);
 
-  //засекаем время запуска
+  //Р·Р°СЃРµРєР°РµРј РІСЂРµРјСЏ Р·Р°РїСѓСЃРєР°
   startTime := now();
 
-  //извлекаем параметры
+  //РёР·РІР»РµРєР°РµРј РїР°СЂР°РјРµС‚СЂС‹
   for i := 0 to ParamCount do begin
     param := paramstr(i);
 
@@ -203,24 +203,24 @@ begin
     extractParam(isInteractive, param, pInteractive);
   end;
 
-  //0 хендл окна
-  //1 - хендл таймера
-  //1 - интервал таймера
-  //адресс процедуры @Proc
+  //0 С…РµРЅРґР» РѕРєРЅР°
+  //1 - С…РµРЅРґР» С‚Р°Р№РјРµСЂР°
+  //1 - РёРЅС‚РµСЂРІР°Р» С‚Р°Р№РјРµСЂР°
+  //Р°РґСЂРµСЃСЃ РїСЂРѕС†РµРґСѓСЂС‹ @Proc
   if isInteractive then
     timer := timeSetEvent(1000, 1000, @OnTime, 0, 1);
 
-  //не указали запрос, имя файла или имя сервера
+  //РЅРµ СѓРєР°Р·Р°Р»Рё Р·Р°РїСЂРѕСЃ, РёРјСЏ С„Р°Р№Р»Р° РёР»Рё РёРјСЏ СЃРµСЂРІРµСЂР°
   if (trim(query) = '') or (trim(filename) = '') or (servername = '') then exit;
 
-  //проверяем доступен ли файл для записи
-  //будет неудобно если сделали получасовой запрос, а файл для сохранения занят другой программой
+  //РїСЂРѕРІРµСЂСЏРµРј РґРѕСЃС‚СѓРїРµРЅ Р»Рё С„Р°Р№Р» РґР»СЏ Р·Р°РїРёСЃРё
+  //Р±СѓРґРµС‚ РЅРµСѓРґРѕР±РЅРѕ РµСЃР»Рё СЃРґРµР»Р°Р»Рё РїРѕР»СѓС‡Р°СЃРѕРІРѕР№ Р·Р°РїСЂРѕСЃ, Р° С„Р°Р№Р» РґР»СЏ СЃРѕС…СЂР°РЅРµРЅРёСЏ Р·Р°РЅСЏС‚ РґСЂСѓРіРѕР№ РїСЂРѕРіСЂР°РјРјРѕР№
   if IsOpen(filename) then begin
     Writeln(Format('Error open file "%s"', [filename]));
     exit;
   end;
 
-  //если Excel не установлен
+  //РµСЃР»Рё Excel РЅРµ СѓСЃС‚Р°РЅРѕРІР»РµРЅ
   if not isExcelInstalled then begin
     Writeln('Excel is not install');
     exit;
@@ -239,38 +239,38 @@ begin
       Excel.DisplayAlerts := false;
       //Excel.ActiveWindow.Caption := 'Title';
 
-      //добавляем книгу
+      //РґРѕР±Р°РІР»СЏРµРј РєРЅРёРіСѓ
       Excel.WorkBooks.Add;
 
-      //подключаемся к серверу базы данных
+      //РїРѕРґРєР»СЋС‡Р°РµРјСЃСЏ Рє СЃРµСЂРІРµСЂСѓ Р±Р°Р·С‹ РґР°РЅРЅС‹С…
       connection := TADOConnection.Create(nil);
       connection.ConnectionString := Format('Provider=SQLOLEDB.1;Integrated Security=SSPI;Persist Security Info=False;User ID=RCReport;Data Source=%s;Current Language=Russian', [servername]);
       connection.Mode := cmRead;
       connection.CursorLocation := clUseServer;
       connection.IsolationLevel := ilChaos;
       connection.LoginPrompt := False;
-      connection.CommandTimeout := 0; //ожидаем бесконечно (по умолчанию 30)
+      connection.CommandTimeout := 0; //РѕР¶РёРґР°РµРј Р±РµСЃРєРѕРЅРµС‡РЅРѕ (РїРѕ СѓРјРѕР»С‡Р°РЅРёСЋ 30)
 
-      //подключаемся к базе
+      //РїРѕРґРєР»СЋС‡Р°РµРјСЃСЏ Рє Р±Р°Р·Рµ
       log('connection...', true);
       if ((user <> '') or (password <> '')) then
         connection.Open(user, password)
       else
         connection.Open;
 
-      //начинаем транзакцию
+      //РЅР°С‡РёРЅР°РµРј С‚СЂР°РЅР·Р°РєС†РёСЋ
       connection.BeginTrans;
-      //получаем записи (ADO объект - "рекордсет") из БД, асинхронно
+      //РїРѕР»СѓС‡Р°РµРј Р·Р°РїРёСЃРё (ADO РѕР±СЉРµРєС‚ - "СЂРµРєРѕСЂРґСЃРµС‚") РёР· Р‘Р”, Р°СЃРёРЅС…СЂРѕРЅРЅРѕ
       log('execute...', true);
       recordset := connection.Execute(query, cmdText, [eoAsyncFetch]);
 
-      //пробегаемся по записям
+      //РїСЂРѕР±РµРіР°РµРјСЃСЏ РїРѕ Р·Р°РїРёСЃСЏРј
       count := 1;
 
-      //создаем массив
+      //СЃРѕР·РґР°РµРј РјР°СЃСЃРёРІ
       ArrayData := VarArrayCreate([0, 1 {recordset.RecordCount}, 0, recordset.Fields.Count], varVariant);
 
-      //добавляем заголовки
+      //РґРѕР±Р°РІР»СЏРµРј Р·Р°РіРѕР»РѕРІРєРё
       if withHeaders then begin
         //ArrayData := VarArrayCreate([0, 1{recordset.RecordCount}, 0, recordset.Fields.Count], varVariant);
         for i := 0 to recordset.Fields.Count - 1 do
@@ -290,15 +290,15 @@ begin
         for i := 0 to recordset.Fields.Count - 1 do begin
           value := recordset.Fields[i].Value;
 
-          //если это булево значение
+          //РµСЃР»Рё СЌС‚Рѕ Р±СѓР»РµРІРѕ Р·РЅР°С‡РµРЅРёРµ
           if VarIsType(value, [varBoolean]) then begin
             if value = true then
-              value := 'Да'
+              value := 'Р”Р°'
             else
-              value := 'Нет';
+              value := 'РќРµС‚';
           end;
 
-          //если это значение с плавающей запятой
+          //РµСЃР»Рё СЌС‚Рѕ Р·РЅР°С‡РµРЅРёРµ СЃ РїР»Р°РІР°СЋС‰РµР№ Р·Р°РїСЏС‚РѕР№
           if VarIsType(value, [varSingle, varDouble, varCurrency, varDecimal]) then begin
             varExtended := value;
             value := varExtended;
@@ -311,43 +311,43 @@ begin
 
         currentRange := Excel.Range[Excel.Cells.Item[count, 1], Excel.Cells.Item[VarArrayHighBound(ArrayData, 1) + count, VarArrayHighBound(ArrayData, 2)]];
 
-        //вставка данных
+        //РІСЃС‚Р°РІРєР° РґР°РЅРЅС‹С…
         currentRange.FormulaR1C1 := ArrayData;
 
         inc(count);
         recordset.MoveNext;
       end;
 
-      //освобождаем ресурсы
-      //иначе процесс excel будет висеть в памяти
+      //РѕСЃРІРѕР±РѕР¶РґР°РµРј СЂРµСЃСѓСЂСЃС‹
+      //РёРЅР°С‡Рµ РїСЂРѕС†РµСЃСЃ excel Р±СѓРґРµС‚ РІРёСЃРµС‚СЊ РІ РїР°РјСЏС‚Рё
       VarClear(currentRange);
       VarClear(ArrayData);
 
-      //выделяем всё
+      //РІС‹РґРµР»СЏРµРј РІСЃС‘
       currentRange := Excel.Range[Excel.Cells.Item[1, 1], Excel.Cells.Item[count - 1, recordset.Fields.Count]];
 
-      //переносить по словам - очень медленно
+      //РїРµСЂРµРЅРѕСЃРёС‚СЊ РїРѕ СЃР»РѕРІР°Рј - РѕС‡РµРЅСЊ РјРµРґР»РµРЅРЅРѕ
       //currentRange.WrapText:=true;
 
-      //рамка снаружи
+      //СЂР°РјРєР° СЃРЅР°СЂСѓР¶Рё
       currentRange.Borders[xlEdgeBottom].Weight := xlThin;
       currentRange.Borders[xlEdgeLeft].Weight := xlThin;
       currentRange.Borders[xlEdgeRight].Weight := xlThin;
       currentRange.Borders[xlEdgeTop].Weight := xlThin;
 
-      //рамка внутри
+      //СЂР°РјРєР° РІРЅСѓС‚СЂРё
       currentRange.Borders[xlInsideHorizontal].Weight := xlThin;
       currentRange.Borders[xlInsideVertical].Weight := xlThin;
 
-      //автофильтр для колонок
+      //Р°РІС‚РѕС„РёР»СЊС‚СЂ РґР»СЏ РєРѕР»РѕРЅРѕРє
       if withHeaders then
         currentRange.AutoFilter;
 
-      //авто-ширина и авто-высота
+      //Р°РІС‚Рѕ-С€РёСЂРёРЅР° Рё Р°РІС‚Рѕ-РІС‹СЃРѕС‚Р°
       Excel.ActiveWorkbook.Worksheets.Item[1].Columns.AutoFit;
       Excel.ActiveWorkbook.Worksheets.Item[1].Rows.AutoFit;
 
-      //освобождаем ресурсы
+      //РѕСЃРІРѕР±РѕР¶РґР°РµРј СЂРµСЃСѓСЂСЃС‹
       VarClear(currentRange);
 
       log(Format('progress %d rows loaded', [count]), true);
@@ -357,11 +357,11 @@ begin
     end;
 
   finally
-    //убиваем таймер
+    //СѓР±РёРІР°РµРј С‚Р°Р№РјРµСЂ
     if isInteractive then
       timeKillEvent(timer);
 
-    //если рекордсет существует - закрываем
+    //РµСЃР»Рё СЂРµРєРѕСЂРґСЃРµС‚ СЃСѓС‰РµСЃС‚РІСѓРµС‚ - Р·Р°РєСЂС‹РІР°РµРј
     (*
     if Assigned(recordset) then
       if (recordset.State>0{adStateClosed}) then begin
@@ -370,15 +370,15 @@ begin
       end;
      *)
 
-    //пытаемся сохранить
+    //РїС‹С‚Р°РµРјСЃСЏ СЃРѕС…СЂР°РЅРёС‚СЊ
     if not VarIsNull(Excel) then
     try
-      //сохраняем результат
+      //СЃРѕС…СЂР°РЅСЏРµРј СЂРµР·СѓР»СЊС‚Р°С‚
       Excel.ActiveWorkbook.SaveAs(filename);
       //Excel.ActiveWorkbook.Close(true,'C:\\temp\\111.xlsx');
 
-      //пишем в консоль результат
-      //по этим строкам определяют результат работы bcp.exe от microsoft'а
+      //РїРёС€РµРј РІ РєРѕРЅСЃРѕР»СЊ СЂРµР·СѓР»СЊС‚Р°С‚
+      //РїРѕ СЌС‚РёРј СЃС‚СЂРѕРєР°Рј РѕРїСЂРµРґРµР»СЏСЋС‚ СЂРµР·СѓР»СЊС‚Р°С‚ СЂР°Р±РѕС‚С‹ bcp.exe РѕС‚ microsoft'Р°
       Writeln(Format('%d rows copied', [count]));
 
       //Excel.Visible := true;
@@ -388,7 +388,7 @@ begin
       Excel.Workbooks.Close;
       Excel.Quit;
 
-      //освобождаем указатель на Excel
+      //РѕСЃРІРѕР±РѕР¶РґР°РµРј СѓРєР°Р·Р°С‚РµР»СЊ РЅР° Excel
       VarClear(Excel);
     except
       on e: Exception do Writeln(StrToOem(e.Message));
@@ -398,4 +398,3 @@ begin
   exit;
 
 end.
-

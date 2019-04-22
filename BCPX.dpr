@@ -72,6 +72,7 @@ var
   recordset: _recordset;
 
   count: integer;
+  position : integer; //позиция для вывода строки в Excel (должна начинаться с 1)
   Excel: Variant;
 
   ArrayData: variant;
@@ -187,6 +188,11 @@ begin
   //SetConsoleCP(1251);
   //SetConsoleOutputCP(1251);
 
+  //количество загруженных строк
+  count := 0;
+  //стартовая позиция в Excel - всегда с 1
+  position:=1;
+
   //засекаем время запуска
   startTime := now();
 
@@ -216,9 +222,16 @@ begin
   //проверяем доступен ли файл для записи
   //будет неудобно если сделали получасовой запрос, а файл для сохранения занят другой программой
   if IsOpen(filename) then begin
-    Writeln(Format('Error open file "%s"', [filename]));
+    Writeln(Format('Error write to file "%s"', [filename]));
     exit;
   end;
+
+  //пытаемся создать подпапки по указанному пути
+  if not DirectoryExists(ExtractFilePath(filename)) then
+    if not ForceDirectories(ExtractFilePath(filename)) then begin
+      Writeln(Format('Can not create path "%s"', [ExtractFilePath(filename)]));
+      exit;
+    end;
 
   //если Excel не установлен
   if not isExcelInstalled then begin
@@ -244,7 +257,7 @@ begin
 
       //подключаемся к серверу базы данных
       connection := TADOConnection.Create(nil);
-      connection.ConnectionString := Format('Provider=SQLOLEDB.1;Integrated Security=SSPI;Persist Security Info=False;User ID=RCReport;Data Source=%s;Current Language=Russian', [servername]);
+      connection.ConnectionString := Format('Provider=SQLOLEDB.1;Integrated Security=SSPI;Persist Security Info=False;Data Source=%s;Current Language=Russian', [servername]);
       connection.Mode := cmRead;
       connection.CursorLocation := clUseServer;
       connection.IsolationLevel := ilChaos;
@@ -264,24 +277,22 @@ begin
       log('execute...', true);
       recordset := connection.Execute(query, cmdText, [eoAsyncFetch]);
 
-      //пробегаемся по записям
-      count := 1;
-
       //создаем массив
       ArrayData := VarArrayCreate([0, 1 {recordset.RecordCount}, 0, recordset.Fields.Count], varVariant);
 
       //добавляем заголовки
       if withHeaders then begin
-        //ArrayData := VarArrayCreate([0, 1{recordset.RecordCount}, 0, recordset.Fields.Count], varVariant);
         for i := 0 to recordset.Fields.Count - 1 do
           ArrayData[0, i] := VarToStr(recordset.Fields[i].Name);
 
-        currentRange := Excel.Range[Excel.Cells.Item[1, 1], Excel.Cells.Item[VarArrayHighBound(ArrayData, 1) + 1, VarArrayHighBound(ArrayData, 2)]];
-        currentRange.FormulaR1C1 := ArrayData;
-
-        inc(count);
+        if VarArrayHighBound(ArrayData, 2)>0 then begin
+          currentRange := Excel.Range[Excel.Cells.Item[1, 1], Excel.Cells.Item[VarArrayHighBound(ArrayData, 1) + 1, VarArrayHighBound(ArrayData, 2)]];
+          currentRange.FormulaR1C1 := ArrayData;
+        end;
       end;
 
+      //если записей нет - выходим
+      if recordset.Fields.Count=0 then exit;
 
       //recordset.MoveFirst;
       while not (recordset.EOF) do begin
@@ -309,7 +320,12 @@ begin
           VarClear(value);
         end;
 
-        currentRange := Excel.Range[Excel.Cells.Item[count, 1], Excel.Cells.Item[VarArrayHighBound(ArrayData, 1) + count, VarArrayHighBound(ArrayData, 2)]];
+        //вычисляем позицию строки
+        position:=1+count;
+        //если есть заголовок (в первой строке) - смещаем еще ниже
+        if withHeaders then inc(position);
+
+        currentRange := Excel.Range[Excel.Cells.Item[position, 1], Excel.Cells.Item[VarArrayHighBound(ArrayData, 1) + position, VarArrayHighBound(ArrayData, 2)]];
 
         //вставка данных
         currentRange.FormulaR1C1 := ArrayData;
@@ -324,7 +340,7 @@ begin
       VarClear(ArrayData);
 
       //выделяем всё
-      currentRange := Excel.Range[Excel.Cells.Item[1, 1], Excel.Cells.Item[count - 1, recordset.Fields.Count]];
+      currentRange := Excel.Range[Excel.Cells.Item[1, 1], Excel.Cells.Item[position, recordset.Fields.Count]];
 
       //переносить по словам - очень медленно
       //currentRange.WrapText:=true;
@@ -379,13 +395,17 @@ begin
 
       //пишем в консоль результат
       //по этим строкам определяют результат работы bcp.exe от microsoft'а
-      Writeln(Format('%d rows copied', [count]));
+      if count>0 then
+        Writeln(Format('%d rows copied', [count]));
 
+      Excel.Workbooks.Close;
+
+      //восстанавливаем работоспособность экселя
       //Excel.Visible := true;
       //Excel.ScreenUpdating := true;
       //Excel.EnableEvents := true;
       //Excel.DisplayStatusBar := true;
-      Excel.Workbooks.Close;
+      
       Excel.Quit;
 
       //освобождаем указатель на Excel

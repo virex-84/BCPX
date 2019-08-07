@@ -13,6 +13,7 @@
   -H - включать в файл заголовоки запроса/таблицы
   -S - имя сервера
   -I - интерактивный режим: каждую секунду отображает время и прогресс
+  -NC - не исполнять транзакцию (по умолчанию транзакция исполняется)
 }
 program BCPX;
 
@@ -36,6 +37,7 @@ const
   pHeaders = '-H';
   pServer = '-S';
   pInteractive = '-I';
+  pNotCommitTransaction = '-NC';
 
 //импорт из Excel8TLB.pas
 const
@@ -67,6 +69,7 @@ var
   withHeaders: boolean;
   servername: string;
   isInteractive: boolean;
+  isNotCommitTransaction: boolean;
 
   connection: TADOConnection;
   recordset: _recordset;
@@ -207,6 +210,7 @@ begin
     extractParam(withHeaders, param, pHeaders);
     extractParam(servername, param, pServer);
     extractParam(isInteractive, param, pInteractive);
+    extractParam(isNotCommitTransaction, param, pNotCommitTransaction);
   end;
 
   //0 хендл окна
@@ -414,6 +418,11 @@ begin
       on e: Exception do Writeln(StrToOem(e.Message));
     end;
   end;
+
+  //если в запросе есть какие-либо изменения (insert, delete и т.д.)
+  //то по умолчани они будут исполнены
+  if (not isNotCommitTransaction) then
+    connection.CommitTrans;
 
   exit;
 

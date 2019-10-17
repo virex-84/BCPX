@@ -394,7 +394,8 @@ begin
     if not VarIsNull(Excel) then
     try
       //сохраняем результат
-      Excel.ActiveWorkbook.SaveAs(filename);
+      //Excel.ActiveWorkbook.SaveAs(filename);
+      Excel.ActiveWorkbook.SaveCopyAs(filename);
       //Excel.ActiveWorkbook.Close(true,'C:\\temp\\111.xlsx');
 
       //пишем в консоль результат

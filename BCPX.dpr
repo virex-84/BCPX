@@ -14,6 +14,7 @@
   -S - имя сервера
   -I - интерактивный режим: каждую секунду отображает время и прогресс
   -NC - не исполнять транзакцию (по умолчанию транзакция исполняется)
+  -FS - вывести количество свободного места
 }
 program BCPX;
 
@@ -38,6 +39,7 @@ const
   pServer = '-S';
   pInteractive = '-I';
   pNotCommitTransaction = '-NC';
+  pFreeSpice = '-FS';
 
 //импорт из Excel8TLB.pas
 const
@@ -70,6 +72,7 @@ var
   servername: string;
   isInteractive: boolean;
   isNotCommitTransaction: boolean;
+  showFreeSpace: boolean;
 
   connection: TADOConnection;
   recordset: _recordset;
@@ -82,6 +85,7 @@ var
   currentRange: variant;
   value: OleVariant;
   varExtended: Extended;
+  FreeAvailable, TotalSpace: Int64;
 
 //таймер для интерактивного режима
 function timeSetEvent(uDelay, uResolution: Longint; lpFunction: pointer; dwUser, uFlags: Longint): Longint; stdcall; external 'winmm.dll';
@@ -186,6 +190,30 @@ begin
     Result := false;
 end;
 
+//вывод размера
+function TotalSize(size:int64):string;
+var
+  kb,mb,gb,tb,pb,eb{,zb,yb}:int64;
+begin
+  kb:=1024;
+  mb:=kb*kb;
+  gb:=mb*kb;
+  tb:=gb*kb;
+  pb:=tb*kb;
+  eb:=pb*kb;
+  //zb:=eb*kb; //не хватает разрядности для подсчета
+  //yb:=zb*kb;
+
+  if ((size>=kb) and (size<=(mb-1))) then Result:=Format('%.2f Kb',[Size/kb]) else
+  if ((size>=mb) and (size<=(gb-1))) then Result:=Format('%.2f Mb',[Size/mb]) else
+  if ((size>=gb) and (size<=(tb-1))) then Result:=Format('%.2f Gb',[Size/gb]) else
+  if ((size>=tb) and (size<=(pb-1))) then Result:=Format('%.2f Tb',[Size/tb]) else
+  if ((size>=pb) and (size<=(eb-1))) then Result:=Format('%.2f Pb',[Size/pb]) else
+  //if ((size>=eb) and (size<=(zb-1))) then Result:=Format('%.2f Эб',[Size/eb]) else
+  //if ((size>=zb) and (size<=(yb-1))) then Result:=Format('%.2f Зб',[Size/zb]) else
+  Result:=IntToStr(size)+' bytes' ;
+end;
+
 begin
   //устанавливаем кодировку
   //SetConsoleCP(1251);
@@ -211,6 +239,7 @@ begin
     extractParam(servername, param, pServer);
     extractParam(isInteractive, param, pInteractive);
     extractParam(isNotCommitTransaction, param, pNotCommitTransaction);
+    extractParam(showFreeSpace, param, pFreeSpice);
   end;
 
   //0 хендл окна
@@ -236,6 +265,12 @@ begin
       Writeln(Format('Can not create path "%s"', [ExtractFilePath(filename)]));
       exit;
     end;
+
+  //вывести количество свободного места
+  if showFreeSpace then
+  if SysUtils.GetDiskFreeSpaceEx(PChar(ExtractFilePath(filename)), FreeAvailable, TotalSpace, nil) then begin
+    Writeln(Format('%s free',[TotalSize(FreeAvailable)]));
+  end;
 
   //если Excel не установлен
   if not isExcelInstalled then begin
@@ -416,7 +451,11 @@ begin
       //освобождаем указатель на Excel
       VarClear(Excel);
     except
-      on e: Exception do Writeln(StrToOem(e.Message));
+      on e: Exception do begin
+        Writeln(StrToOem(e.Message));
+        //освобождаем указатель на Excel
+        VarClear(Excel);
+      end;      
     end;
   end;
 
